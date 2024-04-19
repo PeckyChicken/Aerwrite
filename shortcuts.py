@@ -59,21 +59,31 @@ def confirm_close(_=None):
         confirm_dialog.geometry("350x200")
         confirm_dialog.iconbitmap(f"{__file__}/../icon.ico")
         confirm_dialog.focus()
+
         destroy: Callable = lambda _=None:(mixer.Sound.play(sounds.sounds["quit"]),confirm_dialog.destroy())
+        close_with_save: Callable = lambda _=None:(confirm_dialog.destroy(),save(),close())
+        close_without_save: Callable = lambda _=None:(confirm_dialog.destroy(),close())
+
         warning = tk.Label(confirm_dialog,text="Your note is unsaved. Save?",font=(constants.FONT,constants.FONT_SIZE),bg=constants.TEXT_BACKGROUND_COLOR)
         buttons = tk.Frame(confirm_dialog,background=TEXT_BACKGROUND_COLOR)
-        save_button=tk.Button(buttons,text="Save",command=lambda:(confirm_dialog.destroy(),save(),close()),bg=BACKGROUND_COLOR,font=(constants.FONT,constants.FONT_SIZE-2),width=10,relief="sunken")
-        quit_button=tk.Button(buttons,text="Don't save",command=lambda:(confirm_dialog.destroy(),close()),bg=BACKGROUND_COLOR,font=(constants.FONT,constants.FONT_SIZE-2),width=10)
-        cancel_button=tk.Button(buttons,text="Cancel",command=destroy,bg=BACKGROUND_COLOR,font=(constants.FONT,constants.FONT_SIZE-2),width=10)
+        save_button=tk.Button(buttons,text="Save (Enter)",command=close_with_save,bg=BACKGROUND_COLOR,font=(constants.FONT,constants.FONT_SIZE-2),width=10,relief="sunken")
+        quit_button=tk.Button(buttons,text="Don't save (X)",command=close_without_save,bg=BACKGROUND_COLOR,font=(constants.FONT,constants.FONT_SIZE-2),width=10)
+        cancel_button=tk.Button(buttons,text="Cancel (C)",command=destroy,bg=BACKGROUND_COLOR,font=(constants.FONT,constants.FONT_SIZE-2),width=10)
 
         warning.pack()
         cancel_button.pack(side="right",padx=5)
         quit_button.pack(side="right",padx=5)
         save_button.pack(side="left",padx=5)
         buttons.pack(side="bottom",pady=50)
-        confirm_dialog.bind("<Return>",lambda _:(save(),close()))
-        confirm_dialog.protocol("WM_DELETE_WINDOW",destroy)
+        confirm_dialog.bind("<Return>",close_with_save)
+
+        confirm_dialog.bind("x",close_without_save)
+        confirm_dialog.bind("X",close_without_save)
+
+        confirm_dialog.bind("c",destroy)
+        confirm_dialog.bind("C",destroy)
         confirm_dialog.bind("<Escape>",destroy)
+        confirm_dialog.protocol("WM_DELETE_WINDOW",destroy)
     else:
         close()
 
