@@ -8,7 +8,7 @@ window.iconbitmap(f"{__file__}/../icon.ico")
 note_background = tk.Frame(window,background=constants.BACKGROUND_COLOR,width=constants.SCREEN_WIDTH,height=constants.SCREEN_HEIGHT,bd=0)
 text_box = tk.Text(note_background,background=constants.TEXT_BACKGROUND_COLOR,width=constants.SCREEN_WIDTH,height=constants.SCREEN_HEIGHT,bd=0,font=(constants.FONT,constants.FONT_SIZE),wrap="word")
 text_box.pack(padx=constants.NOTE_PAD_MARGIN,pady=constants.NOTE_PAD_MARGIN)
-
+text_box.focus()
 
 if constants.PURPOSE == "open":
     with open(f"{constants.CWD}/{constants.STORAGE_DIR}/{constants.FILE_NAME}.txt") as f:
