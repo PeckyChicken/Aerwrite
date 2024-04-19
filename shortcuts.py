@@ -45,7 +45,7 @@ def save(file=None,e=None):
         window.after(500,lambda: guis.text_box.config(background=constants.TEXT_BACKGROUND_COLOR))
 
 
-def close(_=None,confirm=False):
+def close(_=None):
     mixer.Sound.play(sounds.sounds["quit"]) 
     window.after(500,window.destroy)
 
@@ -59,8 +59,8 @@ def confirm_close(_=None):
         confirm_dialog.focus()
         warning = tk.Label(confirm_dialog,text="Your note is unsaved. Save?",font=(constants.FONT,constants.FONT_SIZE),bg=constants.TEXT_BACKGROUND_COLOR)
         buttons = tk.Frame(confirm_dialog,background=TEXT_BACKGROUND_COLOR)
-        save_button=tk.Button(buttons,text="Save",command=lambda:(save(),close()),bg=BACKGROUND_COLOR,font=(constants.FONT,constants.FONT_SIZE-2),width=10,relief="sunken")
-        quit_button=tk.Button(buttons,text="Don't save",command=close,bg=BACKGROUND_COLOR,font=(constants.FONT,constants.FONT_SIZE-2),width=10)
+        save_button=tk.Button(buttons,text="Save",command=lambda:(confirm_dialog.destroy(),save(),close()),bg=BACKGROUND_COLOR,font=(constants.FONT,constants.FONT_SIZE-2),width=10,relief="sunken")
+        quit_button=tk.Button(buttons,text="Don't save",command=lambda:(confirm_dialog.destroy(),close()),bg=BACKGROUND_COLOR,font=(constants.FONT,constants.FONT_SIZE-2),width=10)
         cancel_button=tk.Button(buttons,text="Cancel",command=lambda:(mixer.Sound.play(sounds.sounds["quit"]),confirm_dialog.destroy()),bg=BACKGROUND_COLOR,font=(constants.FONT,constants.FONT_SIZE-2),width=10)
 
         warning.pack()
@@ -69,13 +69,14 @@ def confirm_close(_=None):
         save_button.pack(side="left",padx=5)
         buttons.pack(side="bottom",pady=50)
         confirm_dialog.bind("<Return>",lambda _:(save(),close()))
+        confirm_dialog.protocol("WM_DELETE_WINDOW",lambda:(mixer.Sound.play(sounds.sounds["quit"]),confirm_dialog.destroy()))
     else:
         close()
 
         
 
-window.bind("<Escape>", close)
-window.protocol("WM_DELETE_WINDOW", close)
+window.bind("<Escape>", confirm_close)
+window.protocol("WM_DELETE_WINDOW", confirm_close)
 window.bind("<Control-Key-s>",lambda e: save(e=e))
 window.bind("<Control-Key-S>",lambda e: save(e=e))
 window.bind("<Control-Key-q>",lambda e: confirm_close(e))
