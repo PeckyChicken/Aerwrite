@@ -1,3 +1,4 @@
+from typing import Callable
 import constants
 import guis
 import sounds
@@ -52,16 +53,18 @@ def close(_=None):
 def confirm_close(_=None):
     if "*" in window.wm_title():
         confirm_dialog = tk.Toplevel(window,bg=constants.TEXT_BACKGROUND_COLOR)
+        mixer.Sound.play(sounds.sounds["open"])
         confirm_dialog.title("Note not saved!⚠️")
         confirm_dialog.resizable(0,0)
         confirm_dialog.geometry("350x200")
         confirm_dialog.iconbitmap(f"{__file__}/../icon.ico")
         confirm_dialog.focus()
+        destroy: Callable = lambda _=None:(mixer.Sound.play(sounds.sounds["quit"]),confirm_dialog.destroy())
         warning = tk.Label(confirm_dialog,text="Your note is unsaved. Save?",font=(constants.FONT,constants.FONT_SIZE),bg=constants.TEXT_BACKGROUND_COLOR)
         buttons = tk.Frame(confirm_dialog,background=TEXT_BACKGROUND_COLOR)
         save_button=tk.Button(buttons,text="Save",command=lambda:(confirm_dialog.destroy(),save(),close()),bg=BACKGROUND_COLOR,font=(constants.FONT,constants.FONT_SIZE-2),width=10,relief="sunken")
         quit_button=tk.Button(buttons,text="Don't save",command=lambda:(confirm_dialog.destroy(),close()),bg=BACKGROUND_COLOR,font=(constants.FONT,constants.FONT_SIZE-2),width=10)
-        cancel_button=tk.Button(buttons,text="Cancel",command=lambda:(mixer.Sound.play(sounds.sounds["quit"]),confirm_dialog.destroy()),bg=BACKGROUND_COLOR,font=(constants.FONT,constants.FONT_SIZE-2),width=10)
+        cancel_button=tk.Button(buttons,text="Cancel",command=destroy,bg=BACKGROUND_COLOR,font=(constants.FONT,constants.FONT_SIZE-2),width=10)
 
         warning.pack()
         cancel_button.pack(side="right",padx=5)
@@ -69,7 +72,8 @@ def confirm_close(_=None):
         save_button.pack(side="left",padx=5)
         buttons.pack(side="bottom",pady=50)
         confirm_dialog.bind("<Return>",lambda _:(save(),close()))
-        confirm_dialog.protocol("WM_DELETE_WINDOW",lambda:(mixer.Sound.play(sounds.sounds["quit"]),confirm_dialog.destroy()))
+        confirm_dialog.protocol("WM_DELETE_WINDOW",destroy)
+        confirm_dialog.bind("<Escape>",destroy)
     else:
         close()
 
