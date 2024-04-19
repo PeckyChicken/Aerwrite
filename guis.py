@@ -75,7 +75,6 @@ def check_indent():
         text_box.mark_set(tk.INSERT, convert_cursor(cursor[0]-1,len(lines[cursor[0]-2])-2))
     
     strip_lines(convert_cursor)
-    apply_period(convert_cursor)
 
 def strip_lines(convert_cursor):
     lines: list[str] = text_box.get("1.0","end").split("\n")
@@ -88,19 +87,6 @@ def strip_lines(convert_cursor):
         text_box.delete(convert_cursor(line_num,0),convert_cursor(line_num,len(line)))
         text_box.insert(convert_cursor(line_num,0),f"{"- ".join(line_data[:-1]+[line_data[-1].strip(" ")])}")
     text_box.mark_set(tk.INSERT,convert_cursor(*cursor))
-
-def apply_period(convert_cursor):
-    lines: list[str] = text_box.get("1.0","end").split("\n")
-    cursor = list(map(int,text_box.index(tk.INSERT).split(".")))
-    for line_num,line in enumerate(lines,start=1):
-        if line_num == cursor[0]:
-            continue
-        if line == "":
-            continue
-        if line.endswith(constants.LINE_ENDS):
-            continue
-
-        text_box.insert(convert_cursor(line_num,len(line)),".")
 
 def load_guis():
     note_gui.unload()
