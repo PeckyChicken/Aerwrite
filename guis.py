@@ -1,4 +1,5 @@
 from tkinter import scrolledtext
+from typing import Callable
 import classes
 import constants
 from imports import *
@@ -58,7 +59,7 @@ def check_indent():
     lines: list[str] = text_box.get("1.0","end").split("\n")
     cursor = list(map(int,text_box.index(tk.INSERT).split(".")))
 
-    convert_cursor = lambda x,y: ".".join(map(str,(x,y)))
+    convert_cursor: Callable = lambda x,y: ".".join(map(str,(x,y)))
 
     last_line: str = lines[cursor[0]-2].strip()
     if lines[cursor[0]-1] == "": ... #If the current line is empty, check if indents need to be added
