@@ -109,9 +109,9 @@ note_buttons: dict[str,tk.Button] = {}
 import_button = tk.Button(selection_background,text="Import",background=constants.BACKGROUND_COLOR,command=import_text)
 
 for note in constants.NOTE_LIST.items():
-    frame = tk.Frame(selection_background,background=constants.BACKGROUND_COLOR,bd=10)
+    frame = tk.Frame(selection_background,background=constants.TEXT_BACKGROUND_COLOR,relief="raised",bd=2)
     note_buttons[note[0]] = frame
-    tk.Button(frame,text=note[0],background=constants.BACKGROUND_COLOR,font=(constants.FONT,constants.FONT_SIZE),command=lambda n=note: open_note(n[0],note_type="--open")).pack(side="left")
+    tk.Button(frame,text=note[0],background=constants.TEXT_BACKGROUND_COLOR,relief="flat",font=(constants.FONT,constants.FONT_SIZE),command=lambda n=note: open_note(n[0],note_type="--open")).pack(side="left")
     tk.Button(frame,text="🗑️"[0],background=constants.DANGER_RED_COLOR,font=(constants.FONT,constants.FONT_SIZE),foreground="#FFFFFF",command=lambda n=note: delete_note(n[0])).pack(side="right")
 
 list_gui = classes.Gui({selection_background:lambda: central_place(selection_background),
