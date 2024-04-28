@@ -156,11 +156,12 @@ def sort_notes(order:Literal["name","time","expiry"]):
     if order == "name":
         key = None
     elif order == "time":
-        key = lambda x: constants.NOTE_TIMESAVE[x]
+        key = lambda x: -constants.NOTE_TIMESAVE[x]
     elif order == "expiry":
         key = None
     else:
         raise NameError(f"Bad name {order}: Must be \"name\", \"time\" or \"expiry\"")
+    mixer.Sound.play(sounds.sounds["save"])
     list_gui.widgets = {note_background:lambda: central_place(note_background)}|{frame:lambda f=frame: f.pack(anchor="nw",fill="x") for i,frame in enumerate(note_frames[j] for j in sorted(note_frames.keys(),key=key))}
     list_gui.reload()
 
