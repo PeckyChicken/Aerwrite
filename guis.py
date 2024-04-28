@@ -24,7 +24,8 @@ if constants.PURPOSE == "open":
 def central_place(x):
     x.place(relx=0.5,rely=0.5,width=constants.SCREEN_WIDTH,height=constants.SCREEN_HEIGHT,anchor="center")
 
-note_gui = classes.Gui({note_background:lambda: central_place(note_background)},size=(constants.SCREEN_WIDTH,constants.SCREEN_HEIGHT),title="Aerwrite",load=False)
+note_gui = classes.Gui({note_background:lambda: central_place(note_background)},size=(constants.SCREEN_WIDTH,constants.SCREEN_HEIGHT),title=constants.FILE_NAME if constants.PURPOSE == "open" else "Untitled",load=False)
+
 def open_note(name,note_type="--open"):
     cmd = [sys.executable] + [sys.argv[0]] + [note_type,name]
     subprocess.Popen(cmd)
@@ -118,7 +119,7 @@ def type_sound(_=None):
         return
     if cur_text == last_text:
         return
-    window.title("*AerWrite*")
+    window.title(f"*{window.title().strip("*")}*")
     last_text = cur_text
     mixer.Sound.play(sounds.sounds[f"typing{random.randint(1,2)}"])
 
@@ -184,7 +185,7 @@ for note in constants.NOTE_LIST.items():
 
 list_gui = classes.Gui({note_background:lambda: central_place(note_background)}|
                             {button:lambda button=button: button.pack(anchor="nw",fill="x") for i,button in enumerate(note_buttons.values())},
-                        title="AerWrite",load=constants.PURPOSE=="list")
+                        title="Aerwrite",load=constants.PURPOSE=="list")
 
 selection_background.bind("<Button-3>",lambda e: options_menu.post(e.x_root,e.y_root))
 

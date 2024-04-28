@@ -32,14 +32,15 @@ def save(file=None,e=None):
         text = guis.text_box.get("1.0","end").strip()
         if text == "":
             return
-        window.title("AerWrite")
         guis.text_box.config(background=constants.SHINE_COLOR)
         window.update()
         mixer.Sound.play(sounds.sounds["save"])
         if constants.PURPOSE == "new":
             name = create_file_name(text)
+
         else:
             name = constants.FILE_NAME
+        window.title(name)
         with open(f"{CWD}/{STORAGE_DIR}/{name}.txt","w") as file:
             file.write(text)
     finally:
