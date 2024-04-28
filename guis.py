@@ -159,6 +159,7 @@ note_options_menu.add_command(label="Delete")
 options_menu = tk.Menu(window,tearoff=0,background=constants.TEXT_BACKGROUND_COLOR,type="normal",selectcolor=constants.BACKGROUND_COLOR,font=(constants.FONT,int(constants.FONT_SIZE//1.25)))
 options_menu.add_command(label="New note",command=lambda: open_note("","--new"))
 options_menu.add_command(label="Import",command=import_text)
+options_menu.add_command(label="Options",command=lambda:...)
 options_menu.add_command(label="Reload",command=restart_window)
 
 
