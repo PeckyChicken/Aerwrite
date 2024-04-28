@@ -8,6 +8,7 @@ window.iconbitmap(f"{__file__}/../icon.ico")
 
 note_background = tk.Frame(window,background=constants.BACKGROUND_COLOR,width=constants.SCREEN_WIDTH,height=constants.SCREEN_HEIGHT,bd=0)
 text_box = tk.Text(note_background,background=constants.TEXT_BACKGROUND_COLOR,width=constants.SCREEN_WIDTH,height=constants.SCREEN_HEIGHT,bd=0,font=(constants.FONT,constants.FONT_SIZE),wrap="word")
+
 text_box.pack(padx=constants.NOTE_PAD_MARGIN,pady=constants.NOTE_PAD_MARGIN)
 text_box.focus()
 
@@ -18,8 +19,7 @@ if constants.PURPOSE == "open":
 def central_place(x):
     x.place(relx=0.5,rely=0.5,width=constants.SCREEN_WIDTH,height=constants.SCREEN_HEIGHT,anchor="center")
 
-note_gui = classes.Gui({note_background:lambda: central_place(note_background)},size=(constants.SCREEN_WIDTH,constants.SCREEN_HEIGHT),title="AerWrite",load=False)
-
+note_gui = classes.Gui({note_background:lambda: central_place(note_background)},size=(constants.SCREEN_WIDTH,constants.SCREEN_HEIGHT),title="Aerwrite",load=False)
 def open_note(name,note_type="--open"):
     cmd = [sys.executable] + [sys.argv[0]] + [note_type,name]
     subprocess.Popen(cmd)
@@ -95,14 +95,31 @@ def load_guis():
     if constants.PURPOSE in("open","new"):
         note_gui.load()
     elif constants.PURPOSE == "list":
+        text_box.pack_forget()
         list_gui.load()
 
 def delete_note(note):
     os.remove(f"{constants.STORAGE_DIR}/{note}.txt")
     restart_window()
 
+def highlight(self:tk.Widget,highlight=True):
+    for child in list(self.children.values())+[self]:
+        child.config(background=constants.BACKGROUND_COLOR if highlight else constants.TEXT_BACKGROUND_COLOR)
 
-selection_background = tk.Frame(window,background=constants.TEXT_BACKGROUND_COLOR,width=constants.SCREEN_WIDTH,height=constants.SCREEN_HEIGHT,bd=0)
+def open_menu(event:tk.Event,note):
+    print(f"Right clicked!")
+    menu.entryconfig(0,command=lambda n=note:open_note(n[0],note_type="--open"))
+    menu.post(event.x_root,event.y_root)
+
+menu = tk.Menu(window,tearoff=0,background=constants.TEXT_BACKGROUND_COLOR,type="normal",selectcolor=constants.BACKGROUND_COLOR)
+menu.add_command(label="Open")
+menu.add_command(label="Copy text")
+menu.add_command(label="Rename")
+menu.add_command(label="Duplicate")
+menu.add_command(label="Delete")
+
+selection_background = tk.Frame(note_background,background=constants.TEXT_BACKGROUND_COLOR,width=constants.SCREEN_WIDTH,height=constants.SCREEN_HEIGHT,bd=0)
+selection_background.pack(padx=constants.NOTE_PAD_MARGIN,pady=constants.NOTE_PAD_MARGIN,expand=True,fill="both")
 
 note_buttons: dict[str,tk.Button] = {}
 
@@ -111,10 +128,17 @@ import_button = tk.Button(selection_background,text="Import",background=constant
 for note in constants.NOTE_LIST.items():
     frame = tk.Frame(selection_background,background=constants.TEXT_BACKGROUND_COLOR,relief="raised",bd=2)
     note_buttons[note[0]] = frame
-    tk.Button(frame,text=note[0],background=constants.TEXT_BACKGROUND_COLOR,relief="flat",font=(constants.FONT,constants.FONT_SIZE),command=lambda n=note: open_note(n[0],note_type="--open")).pack(side="left")
+    l = tk.Label(frame,text=note[0],background=constants.TEXT_BACKGROUND_COLOR,relief="flat",font=(constants.FONT,constants.FONT_SIZE))
+    l.pack(side="left")
     tk.Button(frame,text="🗑️"[0],background=constants.DANGER_RED_COLOR,font=(constants.FONT,constants.FONT_SIZE),foreground="#FFFFFF",command=lambda n=note: delete_note(n[0])).pack(side="right")
+    frame.bind("<Enter>",lambda _,f=frame: highlight(f))
+    frame.bind("<Leave>",lambda _,f=frame: highlight(f,False))
+    for item in [frame,l]:
+        item.bind("<Button-1>",lambda _,f=frame,n=note: (f.config(relief="sunken"),open_note(n[0],note_type="--open")))
+        item.bind("<ButtonRelease-1>",lambda _,f=frame,n=note: (f.config(relief="raised")))
+        item.bind("<Button-3>",lambda e,n=note: open_menu(e,n))
 
-list_gui = classes.Gui({selection_background:lambda: central_place(selection_background),
+list_gui = classes.Gui({note_background:lambda: central_place(note_background),
                         import_button:lambda: import_button.pack(anchor="ne",side="right")}|
                             {button:lambda button=button: button.pack(anchor="nw",fill="x") for i,button in enumerate(note_buttons.values())},
                         title="AerWrite",load=constants.PURPOSE=="list")
