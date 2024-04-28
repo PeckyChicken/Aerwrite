@@ -1,5 +1,5 @@
 from tkinter import scrolledtext
-from typing import Callable
+from typing import Callable, Literal
 
 import classes
 import constants
@@ -16,6 +16,8 @@ text_box.pack(padx=constants.NOTE_PAD_MARGIN,pady=constants.NOTE_PAD_MARGIN)
 text_box.focus()
 
 last_text = text_box.get("1.0","end")
+
+MENU_SETTINGS = {"master":window,"tearoff":0,"background":constants.TEXT_BACKGROUND_COLOR,"type":"normal","selectcolor":constants.BACKGROUND_COLOR,"font":(constants.FONT,int(constants.FONT_SIZE//1.25))}
 
 if constants.PURPOSE == "open":
     with open(f"{constants.CWD}/{constants.STORAGE_DIR}/{constants.FILE_NAME}.txt") as f:
@@ -149,43 +151,67 @@ def open_menu(event:tk.Event,note):
     note_options_menu.entryconfig(4,command=lambda n=note:delete_note(note))
     note_options_menu.post(event.x_root,event.y_root)
 
-note_options_menu = tk.Menu(window,tearoff=0,background=constants.TEXT_BACKGROUND_COLOR,type="normal",selectcolor=constants.BACKGROUND_COLOR,font=(constants.FONT,int(constants.FONT_SIZE//1.25)))
+def sort_notes(order:Literal["name","time","expiry"]):
+    order = order.lower()
+    if order == "name":
+        key = None
+    elif order == "time":
+        key = lambda x: constants.NOTE_TIMESAVE[x]
+    elif order == "expiry":
+        key = None
+    else:
+        raise NameError(f"Bad name {order}: Must be \"name\", \"time\" or \"expiry\"")
+    list_gui.widgets = {note_background:lambda: central_place(note_background)}|{frame:lambda f=frame: f.pack(anchor="nw",fill="x") for i,frame in enumerate(note_frames[j] for j in sorted(note_frames.keys(),key=key))}
+    list_gui.reload()
+
+note_options_menu = tk.Menu(**MENU_SETTINGS)
 note_options_menu.add_command(label="Open")
 note_options_menu.add_command(label="Copy text")
 note_options_menu.add_command(label="Rename")
 note_options_menu.add_command(label="Duplicate")
 note_options_menu.add_command(label="Delete")
 
-options_menu = tk.Menu(window,tearoff=0,background=constants.TEXT_BACKGROUND_COLOR,type="normal",selectcolor=constants.BACKGROUND_COLOR,font=(constants.FONT,int(constants.FONT_SIZE//1.25)))
+sort_by_menu = tk.Menu(**MENU_SETTINGS)
+
+options_menu = tk.Menu(**MENU_SETTINGS)
 options_menu.add_command(label="New note",command=lambda: open_note("","--new"))
 options_menu.add_command(label="Options",command=lambda:...)
 options_menu.add_command(label="Import",command=import_text)
 options_menu.add_command(label="Reload",command=restart_window)
 
+#The sort by option is more complicated, as there are multiple ways you can sort.
+sort_by_menu.add_command(label="Last modified",command=lambda: sort_notes("time"))
+sort_by_menu.add_command(label="Name",command=lambda: sort_notes("name"))
+sort_by_menu.add_command(label="Expiry",command=lambda: sort_notes("expiry"))
+options_menu.add_cascade(label="Sort by...",menu=sort_by_menu)
+
+
 
 selection_background = tk.Frame(note_background,background=constants.TEXT_BACKGROUND_COLOR,width=constants.SCREEN_WIDTH,height=constants.SCREEN_HEIGHT,bd=0)
 selection_background.pack(padx=constants.NOTE_PAD_MARGIN,pady=constants.NOTE_PAD_MARGIN,expand=True,fill="both")
 
-note_buttons: dict[str,tk.Button] = {}
+note_frames: dict[str,tk.Frame] = {}
 
 #import_button = tk.Button(selection_background,text="Import",background=constants.BACKGROUND_COLOR,command=import_text)
+def draw_notes(notes=constants.NOTE_LIST.items()):
+    for note in notes:
+        frame = tk.Frame(selection_background,background=constants.TEXT_BACKGROUND_COLOR,relief="raised",bd=2)
+        note_frames[note[0]] = frame
+        l = tk.Label(frame,text=note[0],background=constants.TEXT_BACKGROUND_COLOR,relief="flat",font=(constants.FONT,constants.FONT_SIZE))
+        l.pack(side="left",pady=10)
+        #tk.Button(frame,text="🗑️"[0],background=constants.DANGER_RED_COLOR,font=(constants.FONT,constants.FONT_SIZE),foreground="#FFFFFF",command=lambda n=note: delete_note(n[0])).pack(side="right")
+        frame.bind("<Enter>",lambda _,f=frame: highlight(f))
+        frame.bind("<Leave>",lambda _,f=frame: highlight(f,False))
+        for item in [frame,l]:
+            item.bind("<Button-1>",lambda _,f=frame,n=note: (f.config(relief="sunken"),open_note(n[0],note_type="--open")))
+            item.bind("<ButtonRelease-1>",lambda _,f=frame,n=note: (f.config(relief="raised")))
+            item.bind("<Button-3>",lambda e,n=note: open_menu(e,n))
 
-for note in constants.NOTE_LIST.items():
-    frame = tk.Frame(selection_background,background=constants.TEXT_BACKGROUND_COLOR,relief="raised",bd=2)
-    note_buttons[note[0]] = frame
-    l = tk.Label(frame,text=note[0],background=constants.TEXT_BACKGROUND_COLOR,relief="flat",font=(constants.FONT,constants.FONT_SIZE))
-    l.pack(side="left",pady=10)
-    #tk.Button(frame,text="🗑️"[0],background=constants.DANGER_RED_COLOR,font=(constants.FONT,constants.FONT_SIZE),foreground="#FFFFFF",command=lambda n=note: delete_note(n[0])).pack(side="right")
-    frame.bind("<Enter>",lambda _,f=frame: highlight(f))
-    frame.bind("<Leave>",lambda _,f=frame: highlight(f,False))
-    for item in [frame,l]:
-        item.bind("<Button-1>",lambda _,f=frame,n=note: (f.config(relief="sunken"),open_note(n[0],note_type="--open")))
-        item.bind("<ButtonRelease-1>",lambda _,f=frame,n=note: (f.config(relief="raised")))
-        item.bind("<Button-3>",lambda e,n=note: open_menu(e,n))
-    
+draw_notes()
+
 
 list_gui = classes.Gui({note_background:lambda: central_place(note_background)}|
-                            {button:lambda button=button: button.pack(anchor="nw",fill="x") for i,button in enumerate(note_buttons.values())},
+                            {button:lambda button=button: button.pack(anchor="nw",fill="x") for i,button in enumerate(note_frames.values())},
                         title="Aerwrite",load=constants.PURPOSE=="list")
 
 selection_background.bind("<Button-3>",lambda e: options_menu.post(e.x_root,e.y_root))
