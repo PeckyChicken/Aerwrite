@@ -34,4 +34,4 @@ class Gui:
                     w.grid_forget()
     def reload(self):
         self.unload()
-        self.reload()
+        self.load()
