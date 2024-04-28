@@ -1,8 +1,11 @@
 from tkinter import scrolledtext
 from typing import Callable
+
 import classes
 import constants
+import sounds
 from imports import *
+
 window = tk.Tk()
 window.iconbitmap(f"{__file__}/../icon.ico")
 
@@ -11,6 +14,8 @@ text_box = tk.Text(note_background,background=constants.TEXT_BACKGROUND_COLOR,wi
 
 text_box.pack(padx=constants.NOTE_PAD_MARGIN,pady=constants.NOTE_PAD_MARGIN)
 text_box.focus()
+
+last_text = text_box.get("1.0","end")
 
 if constants.PURPOSE == "open":
     with open(f"{constants.CWD}/{constants.STORAGE_DIR}/{constants.FILE_NAME}.txt") as f:
@@ -23,6 +28,23 @@ note_gui = classes.Gui({note_background:lambda: central_place(note_background)},
 def open_note(name,note_type="--open"):
     cmd = [sys.executable] + [sys.argv[0]] + [note_type,name]
     subprocess.Popen(cmd)
+
+def find_frame_from_note(note):
+    for f in selection_background.children.values():
+        if f.children["!label"].cget("text") == note[0]:
+            return f
+    return None
+
+def copy_text(note):
+    window.clipboard_clear()
+    window.clipboard_append(note[1])
+    f = find_frame_from_note(note)
+    for item in list(f.children.values()) + [f]:
+        item.config(background=constants.SHINE_COLOR)
+    window.after(500,lambda frame=f:(i.config(background=constants.TEXT_BACKGROUND_COLOR) for i in list(frame.children.values()) + [frame]))
+            
+    window.update()
+    mixer.Sound.play(sounds.sounds["save"])
 
 def equalify(l:list,n:int,pad_item=""):
     '''Returns copy of list l with length n.
@@ -89,6 +111,17 @@ def strip_lines(convert_cursor):
         text_box.insert(convert_cursor(line_num,0),f"{"- ".join(line_data[:-1]+[line_data[-1].strip(" ")])}")
     text_box.mark_set(tk.INSERT,convert_cursor(*cursor))
 
+def type_sound(_=None):
+    global last_text
+    cur_text = text_box.get("1.0","end")
+    if constants.PURPOSE == "list":
+        return
+    if cur_text == last_text:
+        return
+    window.title("*AerWrite*")
+    last_text = cur_text
+    mixer.Sound.play(sounds.sounds[f"typing{random.randint(1,2)}"])
+
 def load_guis():
     note_gui.unload()
     list_gui.unload()
@@ -99,47 +132,60 @@ def load_guis():
         list_gui.load()
 
 def delete_note(note):
-    os.remove(f"{constants.STORAGE_DIR}/{note}.txt")
-    restart_window()
+    os.remove(f"{constants.STORAGE_DIR}/{note[0]}.txt")
+    mixer.Sound.play(sounds.sounds["quit"])
+    find_frame_from_note(note).destroy()
 
 def highlight(self:tk.Widget,highlight=True):
     for child in list(self.children.values())+[self]:
         child.config(background=constants.BACKGROUND_COLOR if highlight else constants.TEXT_BACKGROUND_COLOR)
 
 def open_menu(event:tk.Event,note):
-    print(f"Right clicked!")
-    menu.entryconfig(0,command=lambda n=note:open_note(n[0],note_type="--open"))
-    menu.post(event.x_root,event.y_root)
+    note_options_menu.entryconfig(0,command=lambda n=note:open_note(n[0],note_type="--open"))
+    note_options_menu.entryconfig(1,command=lambda n=note:copy_text(note))
+    note_options_menu.entryconfig(2,command=lambda n=note:...)
+    note_options_menu.entryconfig(3,command=lambda n=note:...)
+    note_options_menu.entryconfig(4,command=lambda n=note:delete_note(note))
+    note_options_menu.post(event.x_root,event.y_root)
 
-menu = tk.Menu(window,tearoff=0,background=constants.TEXT_BACKGROUND_COLOR,type="normal",selectcolor=constants.BACKGROUND_COLOR)
-menu.add_command(label="Open")
-menu.add_command(label="Copy text")
-menu.add_command(label="Rename")
-menu.add_command(label="Duplicate")
-menu.add_command(label="Delete")
+note_options_menu = tk.Menu(window,tearoff=0,background=constants.TEXT_BACKGROUND_COLOR,type="normal",selectcolor=constants.BACKGROUND_COLOR,font=(constants.FONT,int(constants.FONT_SIZE//1.25)))
+note_options_menu.add_command(label="Open")
+note_options_menu.add_command(label="Copy text")
+note_options_menu.add_command(label="Rename")
+note_options_menu.add_command(label="Duplicate")
+note_options_menu.add_command(label="Delete")
+
+options_menu = tk.Menu(window,tearoff=0,background=constants.TEXT_BACKGROUND_COLOR,type="normal",selectcolor=constants.BACKGROUND_COLOR,font=(constants.FONT,int(constants.FONT_SIZE//1.25)))
+options_menu.add_command(label="New note",command=lambda: open_note("","--new"))
+options_menu.add_command(label="Import",command=import_text)
+options_menu.add_command(label="Reload",command=restart_window)
+
 
 selection_background = tk.Frame(note_background,background=constants.TEXT_BACKGROUND_COLOR,width=constants.SCREEN_WIDTH,height=constants.SCREEN_HEIGHT,bd=0)
 selection_background.pack(padx=constants.NOTE_PAD_MARGIN,pady=constants.NOTE_PAD_MARGIN,expand=True,fill="both")
 
 note_buttons: dict[str,tk.Button] = {}
 
-import_button = tk.Button(selection_background,text="Import",background=constants.BACKGROUND_COLOR,command=import_text)
+#import_button = tk.Button(selection_background,text="Import",background=constants.BACKGROUND_COLOR,command=import_text)
 
 for note in constants.NOTE_LIST.items():
     frame = tk.Frame(selection_background,background=constants.TEXT_BACKGROUND_COLOR,relief="raised",bd=2)
     note_buttons[note[0]] = frame
     l = tk.Label(frame,text=note[0],background=constants.TEXT_BACKGROUND_COLOR,relief="flat",font=(constants.FONT,constants.FONT_SIZE))
-    l.pack(side="left")
-    tk.Button(frame,text="🗑️"[0],background=constants.DANGER_RED_COLOR,font=(constants.FONT,constants.FONT_SIZE),foreground="#FFFFFF",command=lambda n=note: delete_note(n[0])).pack(side="right")
+    l.pack(side="left",pady=10)
+    #tk.Button(frame,text="🗑️"[0],background=constants.DANGER_RED_COLOR,font=(constants.FONT,constants.FONT_SIZE),foreground="#FFFFFF",command=lambda n=note: delete_note(n[0])).pack(side="right")
     frame.bind("<Enter>",lambda _,f=frame: highlight(f))
     frame.bind("<Leave>",lambda _,f=frame: highlight(f,False))
     for item in [frame,l]:
         item.bind("<Button-1>",lambda _,f=frame,n=note: (f.config(relief="sunken"),open_note(n[0],note_type="--open")))
         item.bind("<ButtonRelease-1>",lambda _,f=frame,n=note: (f.config(relief="raised")))
         item.bind("<Button-3>",lambda e,n=note: open_menu(e,n))
+    
 
-list_gui = classes.Gui({note_background:lambda: central_place(note_background),
-                        import_button:lambda: import_button.pack(anchor="ne",side="right")}|
+list_gui = classes.Gui({note_background:lambda: central_place(note_background)}|
                             {button:lambda button=button: button.pack(anchor="nw",fill="x") for i,button in enumerate(note_buttons.values())},
                         title="AerWrite",load=constants.PURPOSE=="list")
+
+selection_background.bind("<Button-3>",lambda e: options_menu.post(e.x_root,e.y_root))
+
 load_guis()
