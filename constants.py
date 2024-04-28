@@ -29,11 +29,14 @@ CWD = os.getcwd()
 NOTES = glob.glob(f"*.txt",root_dir=f"{CWD}/{STORAGE_DIR}")
 
 NOTE_LIST: dict[str,str] = {}
+NOTE_TIMESAVE: dict[str,int] = {}
 for note in NOTES:
     note_filepath = f"{CWD}/{STORAGE_DIR}/{note}"
     note_title = "".join(os.path.basename(note).split(".")[:-1])
     with open(note_filepath) as f:
         NOTE_LIST[note_title] = f.read()
+        NOTE_TIMESAVE[note_title] = os.stat(note_filepath).st_mtime
+print(NOTE_TIMESAVE)
 
 params = sys.argv
 
