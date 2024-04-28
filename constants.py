@@ -36,7 +36,6 @@ for note in NOTES:
     with open(note_filepath) as f:
         NOTE_LIST[note_title] = f.read()
         NOTE_TIMESAVE[note_title] = os.stat(note_filepath).st_mtime
-print(NOTE_TIMESAVE)
 
 params = sys.argv
 
