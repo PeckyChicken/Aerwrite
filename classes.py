@@ -32,3 +32,6 @@ class Gui:
                     w.place_forget()
                 except Exception:
                     w.grid_forget()
+    def reload(self):
+        self.unload()
+        self.reload()
