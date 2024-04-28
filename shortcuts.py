@@ -37,7 +37,7 @@ def save(file=None,e=None):
         mixer.Sound.play(sounds.sounds["save"])
         if constants.PURPOSE == "new":
             name = create_file_name(text)
-
+            constants.PURPOSE == "open"
         else:
             name = constants.FILE_NAME
         window.title(name)
