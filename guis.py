@@ -151,7 +151,7 @@ def open_menu(event:tk.Event,note):
     note_options_menu.entryconfig(4,command=lambda n=note:delete_note(note))
     note_options_menu.post(event.x_root,event.y_root)
 
-def sort_notes(order:Literal["name","time","expiry"]):
+def sort_notes(order:Literal["name","time","expiry"],silent=False):
     order = order.lower()
     if order == "name":
         key = None
@@ -161,7 +161,8 @@ def sort_notes(order:Literal["name","time","expiry"]):
         key = None
     else:
         raise NameError(f"Bad name {order}: Must be \"name\", \"time\" or \"expiry\"")
-    mixer.Sound.play(sounds.sounds["save"])
+    if not silent:
+        mixer.Sound.play(sounds.sounds["save"])
     list_gui.widgets = {note_background:lambda: central_place(note_background)}|{frame:lambda f=frame: f.pack(anchor="nw",fill="x") for i,frame in enumerate(note_frames[j] for j in sorted(note_frames.keys(),key=key))}
     list_gui.reload()
 
@@ -198,12 +199,19 @@ def draw_notes(notes=constants.NOTE_LIST.items()):
     for note in notes:
         frame = tk.Frame(selection_background,background=constants.TEXT_BACKGROUND_COLOR,relief="raised",bd=2)
         note_frames[note[0]] = frame
-        l = tk.Label(frame,text=note[0],background=constants.TEXT_BACKGROUND_COLOR,relief="flat",font=(constants.FONT,constants.FONT_SIZE))
+        note_time = datetime.datetime.fromtimestamp(constants.NOTE_TIMESAVE[note[0]]).strftime('%D\n%H:%M:%S')
+        note_text = note[0]
+        if len(note_text) > 60:
+            note_text = note_text[:61]+"..."
+        l = tk.Label(frame,text=note_text,background=constants.TEXT_BACKGROUND_COLOR,relief="flat",font=(constants.FONT,constants.FONT_SIZE))
         l.pack(side="left",pady=10)
+        time_label = tk.Label(frame,text=note_time,background=constants.TEXT_BACKGROUND_COLOR,relief="flat",font=(constants.FONT,int(constants.FONT_SIZE//1.5)))
+        time_label.pack(side="right",pady=10)
+
         #tk.Button(frame,text="🗑️"[0],background=constants.DANGER_RED_COLOR,font=(constants.FONT,constants.FONT_SIZE),foreground="#FFFFFF",command=lambda n=note: delete_note(n[0])).pack(side="right")
         frame.bind("<Enter>",lambda _,f=frame: highlight(f))
         frame.bind("<Leave>",lambda _,f=frame: highlight(f,False))
-        for item in [frame,l]:
+        for item in [frame,l,time_label]:
             item.bind("<Button-1>",lambda _,f=frame,n=note: (f.config(relief="sunken"),open_note(n[0],note_type="--open")))
             item.bind("<ButtonRelease-1>",lambda _,f=frame,n=note: (f.config(relief="raised")))
             item.bind("<Button-3>",lambda e,n=note: open_menu(e,n))
@@ -214,6 +222,8 @@ draw_notes()
 list_gui = classes.Gui({note_background:lambda: central_place(note_background)}|
                             {button:lambda button=button: button.pack(anchor="nw",fill="x") for i,button in enumerate(note_frames.values())},
                         title="Aerwrite",load=constants.PURPOSE=="list")
+
+sort_notes("time",silent=True)
 
 selection_background.bind("<Button-3>",lambda e: options_menu.post(e.x_root,e.y_root))
 
