@@ -5,6 +5,7 @@ import classes
 import constants
 import sounds
 from imports import *
+import autocorrection
 
 window = tk.Tk()
 window.iconbitmap(f"{__file__}/../icon.ico")
@@ -15,13 +16,15 @@ text_box = tk.Text(note_background,background=constants.TEXT_BACKGROUND_COLOR,wi
 text_box.pack(padx=constants.NOTE_PAD_MARGIN,pady=constants.NOTE_PAD_MARGIN)
 text_box.focus()
 
-last_text = text_box.get("1.0","end")
 
 MENU_SETTINGS = {"master":window,"tearoff":0,"background":constants.TEXT_BACKGROUND_COLOR,"type":"normal","selectcolor":constants.BACKGROUND_COLOR,"font":(constants.FONT,int(constants.FONT_SIZE//1.25))}
 
 if constants.PURPOSE == "open":
     with open(f"{constants.CWD}/{constants.STORAGE_DIR}/{constants.FILE_NAME}.txt") as f:
         text_box.insert("1.0",f.read())
+
+last_text = text_box.get("1.0","end")
+
 
 def central_place(x):
     x.place(relx=0.5,rely=0.5,width=constants.SCREEN_WIDTH,height=constants.SCREEN_HEIGHT,anchor="center")
@@ -87,7 +90,6 @@ def check_indent():
     convert_cursor: Callable = lambda x,y: ".".join(map(str,(x,y)))
 
     last_line: str = lines[cursor[0]-2].strip()
-    if lines[cursor[0]-1] == "": ... #If the current line is empty, check if indents need to be added
 
     if last_line.endswith(":") is not last_line.startswith("- "): # "is not" is the python version of xor
         text_box.insert(tk.INSERT,f"{lines[cursor[0]-2].split("-")[0]*last_line.startswith("- ")}- ")
@@ -96,6 +98,7 @@ def check_indent():
         text_box.insert(tk.INSERT,f"{lines[cursor[0]-2].split("-")[0]}  - ") #Finds indent of the last line and adds 2 spaces to it.
     
     if last_line == "-": #That is, the last line is empty except for the indent
+        #Unindent 1 space
         text_box.delete(convert_cursor(cursor[0]-1,0),convert_cursor(cursor[0]-1,2))
         text_box.delete(convert_cursor(cursor[0]-1,len(lines[cursor[0]-2])-2),convert_cursor(cursor[0],0))
         text_box.mark_set(tk.INSERT, convert_cursor(cursor[0]-1,len(lines[cursor[0]-2])-2))
@@ -187,6 +190,7 @@ sort_by_menu.add_command(label="Name",command=lambda: sort_notes("name"))
 sort_by_menu.add_command(label="Expiry",command=lambda: sort_notes("expiry"))
 options_menu.add_cascade(label="Sort by...",menu=sort_by_menu)
 
+completion_menu = tk.Menu(**MENU_SETTINGS)
 
 
 selection_background = tk.Frame(note_background,background=constants.TEXT_BACKGROUND_COLOR,width=constants.SCREEN_WIDTH,height=constants.SCREEN_HEIGHT,bd=0)
@@ -208,7 +212,6 @@ def draw_notes(notes=constants.NOTE_LIST.items()):
         time_label = tk.Label(frame,text=note_time,background=constants.TEXT_BACKGROUND_COLOR,relief="flat",font=(constants.FONT,int(constants.FONT_SIZE//1.5)))
         time_label.pack(side="right",pady=10)
 
-        #tk.Button(frame,text="🗑️"[0],background=constants.DANGER_RED_COLOR,font=(constants.FONT,constants.FONT_SIZE),foreground="#FFFFFF",command=lambda n=note: delete_note(n[0])).pack(side="right")
         frame.bind("<Enter>",lambda _,f=frame: highlight(f))
         frame.bind("<Leave>",lambda _,f=frame: highlight(f,False))
         for item in [frame,l,time_label]:
