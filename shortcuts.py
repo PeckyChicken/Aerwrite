@@ -6,6 +6,7 @@ from constants import BACKGROUND_COLOR, CWD, SHINE_COLOR, STORAGE_DIR, TEXT_BACK
 from guis import window
 from imports import *
 import autocorrection
+import Wordy
 
 modifiers = {
     0x0001: 'Shift',
@@ -100,6 +101,14 @@ def mouse_move(e):
 def largest_common_prefix(words:list[str]):
     return "".join(c[0] for c in itertools.takewhile(lambda x: len(set(x)) == 1, zip(*words)))
 
+def eliminate_common_prefixes(seq: list):
+    '''SEQUENCE MUST BE SORTED ALPHABETICALLY'''
+    prefix = '-' #Blank filler for something that's not a prefix
+    for s in sorted(seq):
+        if not s.startswith(prefix):
+            yield s
+            prefix = s
+
 
 def complete(_=None):
     cursor = list(map(int,guis.text_box.index(tk.INSERT).split(".")))
@@ -109,12 +118,17 @@ def complete(_=None):
     word = word[-1]
     completion_words = autocorrection.complete(word)
     fill_word = lambda new_word:guis.text_box.insert(convert_cursor(*cursor),x.upper() if (word[-1].isupper(),x:=new_word[len(word):])[0] else x.lower())
+    tmp_word = largest_common_prefix(completion_words)
+
+    completion_words: list[str] = list(eliminate_common_prefixes(completion_words))
+
+    completion_words.sort(key=len)
+
     if len(completion_words) < 2:
         if len(completion_words) == 1:
             fill_word(completion_words[0])
         return "break"
-    
-    tmp_word = largest_common_prefix(completion_words)
+
     fill_word(tmp_word)
     tmp_word = word
 
