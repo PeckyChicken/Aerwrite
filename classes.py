@@ -35,3 +35,15 @@ class Gui:
     def reload(self):
         self.unload()
         self.load()
+
+def multi_split(split_string: str,split_chars: list[str]):
+    substrings: list[str] = []
+    cur_substring = ""
+    for char in split_string:
+        if char in split_chars:
+            substrings.append(cur_substring)
+            cur_substring = ""
+        else:
+            cur_substring += char
+    substrings.append(cur_substring)
+    return substrings
