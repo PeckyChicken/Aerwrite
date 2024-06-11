@@ -5,6 +5,7 @@ import sounds
 from constants import BACKGROUND_COLOR, CWD, SHINE_COLOR, STORAGE_DIR, TEXT_BACKGROUND_COLOR
 from guis import window
 from imports import *
+import autocorrection
 
 modifiers = {
     0x0001: 'Shift',
@@ -14,6 +15,10 @@ modifiers = {
     0x0010: 'Num Lock',
     0x0080: 'Right-hand Alt',
 }
+
+get_text = lambda: guis.text_box.get("1.0","end").strip()
+
+mousex = mousey = 0
 
 def create_file_name(text: str):
     for x in constants.SPLIT_CHARS:
@@ -29,7 +34,7 @@ def save(file=None,e=None):
     try:
         if constants.PURPOSE == "list":
             return
-        text = guis.text_box.get("1.0","end").strip()
+        text = get_text()
         if text == "":
             return
         guis.text_box.config(background=constants.SHINE_COLOR)
@@ -88,7 +93,38 @@ def confirm_close(_=None):
     else:
         close()
 
-        
+def mouse_move(e):
+    global mousex, mousey
+    mousex, mousey = e.x, e.y
+
+def largest_common_prefix(words:list[str]):
+    return "".join(c[0] for c in itertools.takewhile(lambda x: len(set(x)) == 1, zip(*words)))
+
+
+def complete(_=None):
+    cursor = list(map(int,guis.text_box.index(tk.INSERT).split(".")))
+    convert_cursor: Callable = lambda x,y: ".".join(map(str,(x,y)))
+    text = guis.text_box.get("0.0",convert_cursor(*cursor))
+    word = guis.classes.multi_split(text,constants.SPLIT_CHARS+(" ",))
+    word = word[-1]
+    completion_words = autocorrection.complete(word)
+    fill_word = lambda new_word:guis.text_box.insert(convert_cursor(*cursor),x.upper() if (word[-1].isupper(),x:=new_word[len(word):])[0] else x.lower())
+    if len(completion_words) < 2:
+        if len(completion_words) == 1:
+            fill_word(completion_words[0])
+        return "break"
+    
+    tmp_word = largest_common_prefix(completion_words)
+    fill_word(tmp_word)
+    tmp_word = word
+
+    guis.completion_menu.delete(0,"end")
+    for w in completion_words:
+        guis.completion_menu.add_command(label=w,command=lambda new_word=w:fill_word(new_word))
+    guis.completion_menu.post(mousex, mousey)
+    
+    
+    return "break"
 
 window.bind("<Escape>", confirm_close)
 window.protocol("WM_DELETE_WINDOW", confirm_close)
@@ -97,4 +133,7 @@ window.bind("<Control-Key-S>",lambda e: save(e=e))
 window.bind("<Control-Key-q>",lambda e: confirm_close(e))
 window.bind("<Control-Key-Q>",lambda e: confirm_close(e))
 window.bind("<Return>",lambda _: guis.check_indent())
-guis.text_box.bind("<Key>", lambda _: window.after(1,guis.type_sound))
+guis.text_box.bind("<Tab>", complete)
+guis.text_box.bind("<Key>", lambda _: (window.after(1,guis.type_sound)))
+
+window.bind("<Motion>",mouse_move)
